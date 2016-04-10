@@ -69,3 +69,6 @@ src/Clients/PowerBIVisualsPlayground/styles/**/*.png
 
 # Styles
 src/Clients/**/styles/*.css
+
+# idea
+.idea
