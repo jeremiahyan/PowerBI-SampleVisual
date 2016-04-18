@@ -148,4 +148,12 @@ module powerbi.visuals.plugins {
         capabilities: samples.StreamGraph.capabilities,
         create: () => new samples.StreamGraph()
     };
+
+    /*
+    export let glucoseChart: IVisualPlugin = {
+        name: "glucoseChart",
+        capabilities: samples.GlucoseChart.capabilities,
+        create: () => new samples.StreamGraph()
+    };
+    */
 }

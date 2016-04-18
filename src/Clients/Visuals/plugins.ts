@@ -327,4 +327,11 @@ module powerbi.visuals.plugins {
         capabilities: capabilities.kpi,
         create: () => new KPIStatusWithHistory()
     };
+
+    export let glucoseChart: IVisualPlugin = {
+        name: 'glucoseChart',
+        watermarkKey: 'glucoseChart',
+        capabilities: GlucoseChart.capabilities,
+        create: () => new GlucoseChart()
+    };
 }

@@ -868,7 +868,7 @@ module powerbi.visuals.samples {
 
         private enumerateDataLabels(enumeration: ObjectEnumerationBuilder): void {
             let labelSettings = this.radarChartData.dataLabelsSettings;
-           
+
             //Draw default settings
             dataLabelUtils.enumerateDataLabels(this.getLabelSettingsOptions(enumeration, labelSettings));
         }

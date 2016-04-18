@@ -129,6 +129,9 @@ module powerbi.visuals.visualPluginFactory {
 
             // Stream Graph
             createPlugin(this.customVisualPlugins, powerbi.visuals.plugins.streamGraph, () => new samples.StreamGraph());
+
+            // Glucose Chart
+            //createPlugin(this.customVisualPlugins, powerbi.visuals.plugins.glucoseChart, () => new samples.GlucoseChart());
         }
     }
 

@@ -165,6 +165,7 @@
         "visuals/treemap.ts",
         "visuals/card.ts",
         "visuals/owlGauge.ts",
+        "visuals/glucoseChart.ts",
         "warnings/visualWarnings.ts",
         "cartesian/waterfallChart.ts",
         "tooltip.ts",

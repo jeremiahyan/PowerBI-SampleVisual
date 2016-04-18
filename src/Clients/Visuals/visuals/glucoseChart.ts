@@ -2,7 +2,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
+ *  All rights reserved.
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,22 +11,20 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
+ *
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
-module powerbi.visuals.samples {
+module powerbi.visuals {
 
     // Glucose chart data model
     export interface GlucoseChartData {
@@ -34,9 +32,14 @@ module powerbi.visuals.samples {
         y: number;
     }
 
+    export interface GlucoseSeries {
+        glucose: GlucoseChartData[];
+    }
+
     // view model
     export interface GlucoseChartViewModel {
-        points: GlucoseChartData[];
+        baseData: GlucoseChartData[];
+        glucoseData: GlucoseSeries[];
         xLabel: string;
         yLabel: string;
         yFormat: string;
@@ -58,17 +61,28 @@ module powerbi.visuals.samples {
                 {
                     name: 'Category',
                     kind: powerbi.VisualDataRoleKind.Grouping,
-                },
-                {
+                    displayName: data.createDisplayNameGetter('Role_DisplayName_Axis'),
+                    description: data.createDisplayNameGetter('Role_DisplayName_AxisDescription'),
+                    cartesianKind: CartesianRoleKind.X,
+                }, {
+                    name: 'Series',
+                    kind: VisualDataRoleKind.Grouping,
+                    displayName: data.createDisplayNameGetter('Role_DisplayName_Legend'),
+                    description: data.createDisplayNameGetter('Role_DisplayName_LegendDescription')
+                }, {
                     name: 'Y',
                     kind: powerbi.VisualDataRoleKind.Measure,
+                    displayName: data.createDisplayNameGetter('Role_DisplayName_Values'),
+                    description: data.createDisplayNameGetter('Role_DisplayName_ValuesDescription'),
+                    requiredTypes: [{ numeric: true }, { integer: true }],
+                    cartesianKind: CartesianRoleKind.Y,
                 },
             ],
             // mapping
             dataViewMappings: [{
                 conditions: [
-                    { 'Category': { max: 1 }, 'Y': { max: 0 } },
-                    { 'Category': { max: 1 }, 'Y': { min: 1, max: 1 } }
+                    { 'Category': { max: 1 }, 'Series': { max: 0}, 'Y': { max: 0 } },
+                    { 'Category': { max: 1 }, 'Series': { max: 1}, 'Y': { min: 1, max: 1 } }
                 ],
                 categorical: {
                     categories: { for: { in: 'Category' } },
@@ -107,7 +121,23 @@ module powerbi.visuals.samples {
         };
 
         // Convert dataview object to model
-        public static converter(dataView: DataView): GlucoseChartViewModel {
+        public static converter(dataView: DataView): GlucoseChartViewModel
+        {
+            if(!dataView
+            || !dataView.categorical
+            || !dataView.categorical.categories
+            || !(dataView.categorical.categories.length > 0)
+            || !dataView.categorical.categories[0]
+            || !dataView.categorical.values
+            || !(dataView.categorical.values.length > 0)) {
+                return {
+                    baseData: null,
+                    glucoseData: null,
+                    xLabel: null,
+                    yLabel: null,
+                    yFormat: null
+                }
+            }
 
             var catDv: DataViewCategorical = dataView.categorical;
             if (catDv.categories && catDv.values) {
@@ -126,7 +156,8 @@ module powerbi.visuals.samples {
                 }
 
                 var viewModel: GlucoseChartViewModel = {
-                    points: dataPoints,
+                    baseData: dataPoints,
+                    glucoseData: null,
                     xLabel: cat.source.displayName,
                     yLabel: values[0].source.displayName,
                     yFormat: values[0].source.format
@@ -134,13 +165,13 @@ module powerbi.visuals.samples {
 
                 return viewModel;
             }
-
         }
 
         private svg: D3.Selection;
         private focus: D3.Selection;
         private context: D3.Selection;
         private focusArea: D3.Selection;
+        private focusDash: D3.Selection;
         private contextArea: D3.Selection;
         private focusX: D3.Selection;
         private contextX: D3.Selection;
@@ -157,7 +188,7 @@ module powerbi.visuals.samples {
         public static yaxis_error_title = 'Invalid Y Axis';
 
         // default colors
-        private fillColors: GlucoseFillColors = { detailsFillColor: '#005496', slicerFillColor: '#BBBDC0' };
+        private fillColors: GlucoseFillColors = { detailsFillColor: '#f2fbe9', slicerFillColor: '#c3d9e0' };
 
         // Initialize visual components
         public init(options: VisualInitOptions): void {
@@ -173,6 +204,7 @@ module powerbi.visuals.samples {
             this.context = this.svg.append('g');
 
             this.focusArea = this.focus.append("path");
+            this.focusDash = this.focus.append("path");
             this.contextArea = this.context.append("path");
 
             this.focusX = this.focus.append('g');
@@ -211,7 +243,7 @@ module powerbi.visuals.samples {
                     this.generateError(1, viewport);
                 }
             }
-            if (dataView.categorical.values){
+            if (dataView.categorical.values) {
                 // Y is not numeric
                 if (!dataView.categorical.values[0].source.type.numeric) {
                     warnings.push({
@@ -234,7 +266,6 @@ module powerbi.visuals.samples {
                     this.cleanError();
                 }
             }
-
         }
 
         // add error message
@@ -263,7 +294,6 @@ module powerbi.visuals.samples {
                 .attr('transform', 'translate(' + viewport.width / 2 + ',' + viewport.height / 2 + ')')
                 .attr('fill', 'red');
             text.text(erroMessage);
-
         }
 
         private cleanError(): void {
@@ -298,7 +328,7 @@ module powerbi.visuals.samples {
 
             viewModel = GlucoseChart.converter(this.dataView);
             if (viewModel){
-                var data = viewModel.points;
+                var data = viewModel.baseData;
 
                 // apply visual style and set functionalities
                 var x = d3.time.scale().range([0, width]),
@@ -309,6 +339,11 @@ module powerbi.visuals.samples {
                 var xAxis = d3.svg.axis().scale(x).orient("bottom"),
                     xAxis2 = d3.svg.axis().scale(x2).orient("bottom"),
                     yAxis = d3.svg.axis().scale(y).orient("left");
+
+                var line = d3.svg.line()
+                    //.interpolate("monotone")
+                    .x(function (d) { return x(d.x); })
+                    .y(function (d) { return y(+d.y); });
 
                 var area = d3.svg.area()
                     .interpolate("monotone")
@@ -324,7 +359,7 @@ module powerbi.visuals.samples {
 
                 var generateTooltipInfo = function (extentX: any, viewModel: GlucoseChartViewModel): TooltipDataItem[] {
                     var ySum = 0;
-                    var data = viewModel.points;
+                    var data = viewModel.baseData;
                     for (var i = 0; i < data.length; i++) {
                         if (extentX[0] <= data[i].x && data[i].x <= extentX[1]) {
                             ySum = ySum + data[i].y;
@@ -383,17 +418,6 @@ module powerbi.visuals.samples {
                 x2.domain(x.domain());
                 y2.domain(y.domain());
 
-                this.focusArea
-                    .datum(data)
-                    .attr("class", "area")
-                    .attr("d", area)
-                    .attr('fill', this.getFill(this.dataView, 'fill').solid.color)
-                    .attr('fill-opacity', .5)
-                    .attr('clip-path', 'url(#clip)')
-                    .attr('fill-opacity', .4)
-                    .attr('stroke', this.getFill(this.dataView, 'fill').solid.color)
-                    .attr('stroke-width', 1.8);
-
                 this.focusX.attr("class", "x axis")
                     .attr("transform", "translate(0," + height + ")")
                     .call(xAxis);
@@ -423,6 +447,31 @@ module powerbi.visuals.samples {
 
                 this.focusY.attr('background-color', '#fff');
                 this.focusY.append("rect");
+
+                this.focusArea
+                    .datum(data)
+                    .attr("class", "area")
+                    .attr("d", area)
+                    .attr('fill', this.getFill(this.dataView, 'fill').solid.color)
+                    .attr('fill-opacity', .5)
+                    .attr('clip-path', 'url(#clip)')
+                    .attr('fill-opacity', .9)
+                    .attr('stroke', '#7ed321')
+                    //.attr('stroke', this.getFill(this.dataView, 'fill').solid.color)
+                    .attr('stroke-width', 1.8);
+
+
+                this.focusDash
+                    .datum(data)
+                    .attr("class", "line")
+                    .attr("d", line)
+                    //.attr('fill', '#999')
+                    .attr('clip-path', 'url(#clip)')
+                    .attr('fill-opacity', .0)
+                    .attr('stroke', '#ff9900')
+                    .attr('stroke-dasharray', ("3, 3"))
+                    .attr('stroke-width', 1.8);
+
 
                 this.contextArea.datum(data)
                     .attr("class", "area brush")
@@ -455,7 +504,7 @@ module powerbi.visuals.samples {
                     .attr('shape-rendering', 'crispEdges');
 
                 this.contextY.select('.extent')
-                    .attr('stroke', '#fff')
+                    .attr('stroke', '#478')
                     .attr('fill-opacity', '.125')
                     .attr('shape-rendering', 'crispEdges');
 

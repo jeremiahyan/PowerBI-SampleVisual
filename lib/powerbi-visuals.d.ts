@@ -15234,6 +15234,57 @@ declare module powerbi.visuals {
     }
 }
 declare module powerbi.visuals {
+    interface GlucoseChartData {
+        x: Date;
+        y: number;
+    }
+    interface GlucoseSeries {
+        glucose: GlucoseChartData[];
+    }
+    interface GlucoseChartViewModel {
+        baseData: GlucoseChartData[];
+        glucoseData: GlucoseSeries[];
+        xLabel: string;
+        yLabel: string;
+        yFormat: string;
+    }
+    interface GlucoseFillColors {
+        detailsFillColor: string;
+        slicerFillColor: string;
+    }
+    class GlucoseChart implements IVisual {
+        static capabilities: VisualCapabilities;
+        static converter(dataView: DataView): GlucoseChartViewModel;
+        private svg;
+        private focus;
+        private context;
+        private focusArea;
+        private focusDash;
+        private contextArea;
+        private focusX;
+        private contextX;
+        private focusY;
+        private contextY;
+        private rect;
+        private axisYRect;
+        private axisYRectRight;
+        private dataView;
+        private host;
+        static category_error_message: string;
+        static yaxis_error_message: string;
+        static category_error_title: string;
+        static yaxis_error_title: string;
+        private fillColors;
+        init(options: VisualInitOptions): void;
+        private validateAxis(dataView, host, viewport);
+        private generateError(type, viewport);
+        private cleanError();
+        update(options: VisualUpdateOptions): void;
+        enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[];
+        private getFill(dataView, fieldName);
+    }
+}
+declare module powerbi.visuals {
     import IStringResourceProvider = jsCommon.IStringResourceProvider;
     class NoMapLocationWarning implements IVisualWarning {
         code: string;
@@ -15690,6 +15741,7 @@ declare module powerbi.visuals.plugins {
     let owlGauge: IVisualPlugin;
     let scriptVisual: IVisualPlugin;
     let kpi: IVisualPlugin;
+    let glucoseChart: IVisualPlugin;
 }
 declare module powerbi.visuals {
     module CanvasBackgroundHelper {

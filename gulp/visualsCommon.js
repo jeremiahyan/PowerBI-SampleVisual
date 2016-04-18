@@ -41,7 +41,7 @@ function runHttpServer(settings, callback) {
     
     var server = null,
         path = pathModule.join(__dirname, "../", settings.path),
-        port = settings.port || 3000,
+        port = settings.port || 3010,
         host = settings.host || "localhost",
         index = settings.index || "index.html";
 

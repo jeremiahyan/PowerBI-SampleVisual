@@ -38,7 +38,8 @@ module powerbi.visuals.sampleDataViews {
             'lineStackedColumnComboChart',
             'lineClusteredColumnComboChart',
             'asterPlot',
-            'radarChart'
+            'radarChart',
+            'glucoseChart'
         ];
         
         private sampleData1 = [

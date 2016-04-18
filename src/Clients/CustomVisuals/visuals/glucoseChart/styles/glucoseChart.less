@@ -26,21 +26,21 @@
 
 @import (reference) "../../../styles/styles.less";
 
-.areaRangeChart {
-    @areaRangeChartAxesColor: @neutralSecondaryAltColor;
-    @areaRangeChartLegendTextColor: @blackColor;
+.glucoseChart {
+    @glucoseChartAxesColor: @neutralSecondaryAltColor;
+    @glucoseChartLegendTextColor: @blackColor;
 
     font-family: @regularFontFamily;
 
     .axis {
         path, line {
             fill: none;
-            stroke: @areaRangeChartAxesColor;
+            stroke: @glucoseChartAxesColor;
             shape-rendering: crispEdges;
         }
 
         text {
-            fill: @areaRangeChartAxesColor;
+            fill: @glucoseChartAxesColor;
             font-size: 11px;
         }
     }
