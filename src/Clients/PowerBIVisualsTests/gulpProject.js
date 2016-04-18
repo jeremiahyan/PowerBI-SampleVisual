@@ -123,7 +123,8 @@ module.exports = projects.initProject(
                         "./customVisuals/sampleDataViews/valueByAgeData.js",
                         "./customVisuals/sampleDataViews/ProductSalesByDateData.js",
                         "./customVisuals/sampleDataViews/EnhancedScatterChartData.js",
-                        "./customVisuals/VisualBuilderBase.js"
+                        "./customVisuals/VisualBuilderBase.js",
+                        "./customVisuals/glucoseChartData.ts"
                     ].concat(tests),
                     jasminePaths = [
                         "jasmine.css",

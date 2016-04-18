@@ -27,19 +27,16 @@
 module powerbi.visuals {
 
     // Glucose chart data model
+    import glucoseChart = powerbi.visuals.plugins.glucoseChart;
     export interface GlucoseChartData {
         x: Date;
         y: number;
     }
 
-    export interface GlucoseSeries {
-        glucose: GlucoseChartData[];
-    }
-
     // view model
     export interface GlucoseChartViewModel {
         baseData: GlucoseChartData[];
-        glucoseData: GlucoseSeries[];
+        glucoseData: GlucoseChartData[][];
         xLabel: string;
         yLabel: string;
         yFormat: string;
@@ -140,6 +137,51 @@ module powerbi.visuals {
             }
 
             var catDv: DataViewCategorical = dataView.categorical;
+
+            if (catDv.categories && catDv.values) {
+                var baseDataPoints: GlucoseChartData[] = [];
+                var glucoseDataSeries: GlucoseChartData[][] = [];
+                var cat = catDv.categories[0];
+                var catValues = cat.values;
+                var values = catDv.values;
+
+                for (var i = 0, len = catValues.length; i < len; i++) {
+                    if ((catValues[i] instanceof Date) && !isNaN(values[0].values[i])) {
+                        baseDataPoints.push({
+                            x: catValues[i],
+                            y: values[0].values[i]
+                        });
+                    }
+                }
+
+                for (var i = 1; i < values.length; i++) {
+                    var glucosePoints: GlucoseChartData[] = [];
+                    for (var j = 0; j < catValues.length; j++) {
+                        if ((catValues[i] instanceof Date) && !isNaN(values[i].values[j])) {
+                            glucosePoints.push({
+                                x: catValues[j],
+                                y: values[i].values[j]
+                            });
+                        }
+                    }
+
+                    glucoseDataSeries.push(glucosePoints);
+                }
+
+                var viewModel: GlucoseChartViewModel = {
+                    baseData: baseDataPoints,
+                    glucoseData: glucoseDataSeries,
+                    xLabel: cat.source.displayName,
+                    yLabel: values[0].source.displayName,
+                    yFormat: values[0].source.format
+                };
+
+                GlucoseChart.lineCount = glucoseDataSeries.length;
+
+                return viewModel;
+            }
+
+            /*
             if (catDv.categories && catDv.values) {
                 var cat = catDv.categories[0];
                 var catValues = cat.values;
@@ -165,13 +207,16 @@ module powerbi.visuals {
 
                 return viewModel;
             }
+            */
         }
+        public static lineCount: number;
 
         private svg: D3.Selection;
         private focus: D3.Selection;
         private context: D3.Selection;
         private focusArea: D3.Selection;
-        private focusDash: D3.Selection;
+        private focusLines: D3.Selection[] = [];
+
         private contextArea: D3.Selection;
         private focusX: D3.Selection;
         private contextX: D3.Selection;
@@ -192,6 +237,7 @@ module powerbi.visuals {
 
         // Initialize visual components
         public init(options: VisualInitOptions): void {
+
             var element = options.element;
 
             this.svg = d3.select(element.get(0)).append('svg');
@@ -204,7 +250,14 @@ module powerbi.visuals {
             this.context = this.svg.append('g');
 
             this.focusArea = this.focus.append("path");
-            this.focusDash = this.focus.append("path");
+            if (GlucoseChart.lineCount <= 0) {
+                GlucoseChart.lineCount = 3;
+            }
+            for (var i = 0; i < GlucoseChart.lineCount; i++) {
+                var focusLine = this.focus.append("path");
+                this.focusLines.push(focusLine);
+            }
+
             this.contextArea = this.context.append("path");
 
             this.focusX = this.focus.append('g');
@@ -329,6 +382,31 @@ module powerbi.visuals {
             viewModel = GlucoseChart.converter(this.dataView);
             if (viewModel){
                 var data = viewModel.baseData;
+                var glucoseData: GlucoseChartData[][];
+                var lineList = [];
+
+                /*
+                var log: string = "Data(" + data.length + "): \n";
+                for (var i = 0; i < data.length; i++) {
+                    log += (data[i].x + ", " + data[i].y + "\n");
+                }
+                alert(log);
+                */
+
+                //alert("viewModel.glucoseData.length: " + viewModel.glucoseData.length);
+                if (viewModel.glucoseData.length > 0) {
+                    glucoseData = viewModel.glucoseData;
+                    /*
+                    var log: string = "GlucoseData(" + glucoseData.length + "): \n";
+                    for (var i = 0; i < glucoseData.length; i++) {
+                        log += (glucoseData[i].x + ", " + glucoseData[i].y + "\n");
+                    }
+                    //alert(log);
+                    */
+                } else {
+                    glucoseData = [];
+                }
+
 
                 // apply visual style and set functionalities
                 var x = d3.time.scale().range([0, width]),
@@ -340,10 +418,13 @@ module powerbi.visuals {
                     xAxis2 = d3.svg.axis().scale(x2).orient("bottom"),
                     yAxis = d3.svg.axis().scale(y).orient("left");
 
-                var line = d3.svg.line()
-                    //.interpolate("monotone")
-                    .x(function (d) { return x(d.x); })
-                    .y(function (d) { return y(+d.y); });
+                for (var i = 0; i < glucoseData.length; i++) {
+                    var line = d3.svg.line()
+                        //.interpolate("monotone")
+                        .x(function (d) { return x(d.x); })
+                        .y(function (d) { return y(+d.y); });
+                    lineList.push(line);
+                }
 
                 var area = d3.svg.area()
                     .interpolate("monotone")
@@ -383,6 +464,15 @@ module powerbi.visuals {
                         x.domain(brush.empty() ? x2.domain() : brush.extent());
                         focus.select(".area").empty();
                         focus.select(".area").attr("d", area);
+                        focus.select(".line").empty();
+                        focus.select(".line").attr("d", line);
+
+                        for (var i = 0; i < lineList.length; i++) {
+                            var selectString = ".line" + i;
+                            focus.select(selectString).empty();
+                            focus.select(selectString).attr("d", lineList[i]);
+                        }
+
                         focus.select(".x.axis").call(xAxis);
                         // generate back the tooltip
                         var tooltip = generateTooltipInfo(brush.extent(), viewModel);
@@ -460,19 +550,6 @@ module powerbi.visuals {
                     //.attr('stroke', this.getFill(this.dataView, 'fill').solid.color)
                     .attr('stroke-width', 1.8);
 
-
-                this.focusDash
-                    .datum(data)
-                    .attr("class", "line")
-                    .attr("d", line)
-                    //.attr('fill', '#999')
-                    .attr('clip-path', 'url(#clip)')
-                    .attr('fill-opacity', .0)
-                    .attr('stroke', '#ff9900')
-                    .attr('stroke-dasharray', ("3, 3"))
-                    .attr('stroke-width', 1.8);
-
-
                 this.contextArea.datum(data)
                     .attr("class", "area brush")
                     .attr("d", area2)
@@ -507,6 +584,25 @@ module powerbi.visuals {
                     .attr('stroke', '#478')
                     .attr('fill-opacity', '.125')
                     .attr('shape-rendering', 'crispEdges');
+
+                for (var i = 0; i < glucoseData.length; i++) {
+                    var focusLine = this.focusLines[i];
+                    //var focusLine = this.focusLines[i];
+                    var gluData = glucoseData[i];
+                    //var line: D3.svg.Line = lineList[i];
+
+                    focusLine.datum(gluData)
+                        .attr("class", "line" + i)
+                        .attr("d", lineList[i])
+                        //.attr('fill', '#999')
+                        .attr('clip-path', 'url(#clip)')
+                        .attr('fill-opacity', .0)
+                        .attr('stroke', '#ff9900')
+                        .attr('stroke-dasharray', ("3, 3"))
+                        .attr('stroke-width', 1.8);
+
+                        //.attr('stroke', '#3b8ede');
+                }
 
                 TooltipManager.addTooltip(this.focusArea, (tooltipEvent: TooltipEvent) => generateTooltipInfo(x2.domain(), viewModel));
             }

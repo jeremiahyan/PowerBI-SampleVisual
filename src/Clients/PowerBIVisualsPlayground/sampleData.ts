@@ -52,7 +52,8 @@ module powerbi.visuals.sampleData {
             new sampleDataViews.SimpleTimelineData(),
             new sampleDataViews.SimpleHistogramData(),
             new sampleDataViews.SimpleDataByCountries(),
-            new sampleDataViews.SimpleCountriesData()
+            new sampleDataViews.SimpleCountriesData(),
+            new sampleDataViews.GlucoseDataByDate()
         ];
 
         /**

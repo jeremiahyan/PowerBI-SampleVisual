@@ -15238,12 +15238,9 @@ declare module powerbi.visuals {
         x: Date;
         y: number;
     }
-    interface GlucoseSeries {
-        glucose: GlucoseChartData[];
-    }
     interface GlucoseChartViewModel {
         baseData: GlucoseChartData[];
-        glucoseData: GlucoseSeries[];
+        glucoseData: GlucoseChartData[][];
         xLabel: string;
         yLabel: string;
         yFormat: string;
@@ -15255,11 +15252,12 @@ declare module powerbi.visuals {
     class GlucoseChart implements IVisual {
         static capabilities: VisualCapabilities;
         static converter(dataView: DataView): GlucoseChartViewModel;
+        static lineCount: number;
         private svg;
         private focus;
         private context;
         private focusArea;
-        private focusDash;
+        private focusLines;
         private contextArea;
         private focusX;
         private contextX;
