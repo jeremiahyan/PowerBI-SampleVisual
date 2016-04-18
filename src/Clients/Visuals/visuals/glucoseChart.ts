@@ -46,6 +46,7 @@ module powerbi.visuals {
     export interface GlucoseFillColors {
         detailsFillColor: string;
         slicerFillColor: string;
+        lineStokeColor: string[];
     }
 
     // Visual definition
@@ -233,7 +234,15 @@ module powerbi.visuals {
         public static yaxis_error_title = 'Invalid Y Axis';
 
         // default colors
-        private fillColors: GlucoseFillColors = { detailsFillColor: '#f2fbe9', slicerFillColor: '#c3d9e0' };
+        private fillColors: GlucoseFillColors = {
+            detailsFillColor: '#f2fbe9',
+            slicerFillColor: '#c3d9e0',
+            lineStokeColor: [
+                "#ff9900",
+                "2ed3c8",
+                "3b8ede"
+            ]
+        };
 
         // Initialize visual components
         public init(options: VisualInitOptions): void {
@@ -587,9 +596,9 @@ module powerbi.visuals {
 
                 for (var i = 0; i < glucoseData.length; i++) {
                     var focusLine = this.focusLines[i];
-                    //var focusLine = this.focusLines[i];
                     var gluData = glucoseData[i];
                     //var line: D3.svg.Line = lineList[i];
+                    var color = this.fillColors.lineStokeColor[i];
 
                     focusLine.datum(gluData)
                         .attr("class", "line" + i)
