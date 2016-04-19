@@ -26,8 +26,9 @@
 
 module powerbi.visuals.sampleDataViews {
     import DataViewTransform = powerbi.data.DataViewTransform;
+    import glucoseChart = powerbi.visuals.plugins.glucoseChart;
 
-    export class ProductSalesByDate extends SampleDataViews implements ISampleDataViewsMethods {
+    export class GlucoseDataByDate extends SampleDataViews implements ISampleDataViewsMethods {
         private static seriesCount = 4;
         private static valueCount = 50;
 
@@ -42,8 +43,12 @@ module powerbi.visuals.sampleDataViews {
         
         public constructor(){
             super();
-            this.sampleData = this.generateData(ProductSalesByDate.seriesCount, ProductSalesByDate.valueCount);
-            this.dates = this.generateDates(ProductSalesByDate.valueCount);
+            this.sampleData = this.generateData(GlucoseDataByDate.seriesCount, GlucoseDataByDate.valueCount);
+            this.sampleData1 = [
+                this.generateData(GlucoseDataByDate.seriesCount, GlucoseDataByDate.valueCount),
+                this.generateData(GlucoseDataByDate.seriesCount, GlucoseDataByDate.valueCount)
+            ];
+            this.dates = this.generateDates(GlucoseDataByDate.valueCount);
         }
         
         public getDataViews(): DataView[] {
@@ -59,10 +64,10 @@ module powerbi.visuals.sampleDataViews {
             // Metadata, describes the data columns, and provides the visual with hints
             // so it can decide how to best represent the data
             var dataViewMetadata: powerbi.DataViewMetadata = {
-                columns: this.generateColumnMetadata(ProductSalesByDate.seriesCount)
+                columns: this.generateColumnMetadata(GlucoseDataByDate.seriesCount)
             };
 
-            var columns = this.generateColumns(dataViewMetadata, ProductSalesByDate.seriesCount);
+            var columns = this.generateColumns(dataViewMetadata, GlucoseDataByDate.seriesCount);
 
             var dataValues: DataViewValueColumns = DataViewTransform.createValueColumns(columns);
             var tableDataValues = categoryValues.map(function(countryName, idx) {
@@ -88,7 +93,7 @@ module powerbi.visuals.sampleDataViews {
         }
 
         public randomize(): void {
-            this.sampleData = this.generateData(ProductSalesByDate.seriesCount,ProductSalesByDate.valueCount);
+            this.sampleData = this.generateData(GlucoseDataByDate.seriesCount,GlucoseDataByDate.valueCount);
         }
 
         private generateColumnMetadata(n: number){
@@ -150,8 +155,8 @@ module powerbi.visuals.sampleDataViews {
         private generateData(n: number, m: number) {
             let data = [];
             for(let i=0;i<n;i++){
-                //data.push(this.generateSeries(m));
-                data.push(this.generateGlucose(m));
+                data.push(this.generateSeries(m));
+                //data.push(this.generateGlucose(m));
             }
             return data;
         }
@@ -175,10 +180,19 @@ module powerbi.visuals.sampleDataViews {
                 }
             };
 
+            var generateGlucose = function (a, base) {
+                for (var i = 0; i < n; i++) {
+                    var glu = Math.random() * 8 + base;
+                    a[i] = glu;
+                }
+            }
+
             var a = [], i;
-            for (i = 0; i < n; ++i) a[i] = 0;
-            for (i = 0; i < 5; ++i) generateValue(a);
-            return a.map((d, i) => Math.max(0, d) *10000);
+            //for (i = 0; i < n; ++i) a[i] = 0;
+            //for (i = 0; i < 5; ++i) generateValue(a);
+            //for (i = 0; i < n; ++i) generateGlucose(a);
+            generateGlucose(a, 2.6);
+            return a.map((d, i) => Math.max(0, d));
         }
     }
 }

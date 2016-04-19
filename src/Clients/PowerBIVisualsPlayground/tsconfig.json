@@ -33,6 +33,8 @@
         "sampleDataViews/SimpleDataByCountries.ts",
         "sampleDataViews/SimpleCountriesData.ts",
 
+        "sampleDataViews/glucoseData.ts",
+
         "sampleData.ts",
         "hostControls.ts",
         "app.ts"
